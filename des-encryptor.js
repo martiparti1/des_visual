@@ -129,6 +129,19 @@ class DESEncryptor {
         // Rotation schedule for key generation
         this.SHIFT_SCHEDULE = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1];
     }
+    padInput(input) {
+        // PKCS7 padding
+        const blockSize = 8;
+        const padLength = blockSize - (input.length % blockSize);
+        const padChar = String.fromCharCode(padLength);
+        return input + padChar.repeat(padLength);
+    }
+
+    // Unpad input after decryption
+    unpadInput(input) {
+        const padLength = input.charCodeAt(input.length - 1);
+        return input.slice(0, -padLength);
+    }
 
     // Helper function to convert string to binary
     stringToBinary(str) {
@@ -144,6 +157,20 @@ class DESEncryptor {
             result += String.fromCharCode(parseInt(binary.substr(i, 8), 2));
         }
         return result;
+    }
+
+    binaryToBase64(binary) {
+        return btoa(this.binaryToString(binary));
+    }
+
+    // Binary to Hex conversion
+    binaryToHex(binary) {
+        let hex = '';
+        for (let i = 0; i < binary.length; i += 4) {
+            let chunk = binary.substr(i, 4);
+            hex += parseInt(chunk, 2).toString(16).toUpperCase().padStart(1, '0');
+        }
+        return hex;
     }
 
     // Permutation function
@@ -219,120 +246,206 @@ class DESEncryptor {
 
     // Main encryption function
     encrypt(input, key) {
-        // Ensure input is 8 characters
-        input = input.padEnd(8, '\0');
-        input = input.substr(0, 8);
+        // Pad input to multiple of 8 characters
+        const paddedInput = this.padInput(input);
 
-        // Convert input to binary
-        let binaryInput = this.stringToBinary(input);
+        // Process input in 8-character blocks
+        let cipherBlocks = [];
+        for (let i = 0; i < paddedInput.length; i += 8) {
+            let block = paddedInput.substr(i, 8);
+            let binaryInput = this.stringToBinary(block);
 
-        // Initial Permutation
-        let permutedInput = this.permute(binaryInput, this.IP);
+            // Initial Permutation
+            let permutedInput = this.permute(binaryInput, this.IP);
 
-        // Split into left and right halves
-        let left = permutedInput.substr(0, 32);
-        let right = permutedInput.substr(32);
+            // Split into left and right halves
+            let left = permutedInput.substr(0, 32);
+            let right = permutedInput.substr(32);
 
-        // Generate round keys
-        let subKeys = this.generateSubKeys(key);
+            // Generate round keys
+            let subKeys = this.generateSubKeys(key);
 
-        // 16 Rounds of Encryption
-        for (let i = 0; i < 16; i++) {
-            let oldLeft = left;
-            left = right;
+            // 16 Rounds of Encryption
+            for (let j = 0; j < 16; j++) {
+                let oldLeft = left;
+                left = right;
 
-            // Feistel Function
-            let feistelOutput = this.feistelFunction(right, subKeys[i]);
-            right = this.xor(oldLeft, feistelOutput);
+                // Feistel Function
+                let feistelOutput = this.feistelFunction(right, subKeys[j]);
+                right = this.xor(oldLeft, feistelOutput);
+            }
+
+            // Swap left and right for final round
+            let finalBlock = right + left;
+
+            // Final Permutation (Inverse IP)
+            let cipherBlock = this.permute(finalBlock, this.FP);
+            cipherBlocks.push(cipherBlock);
         }
 
-        // Swap left and right for final round
-        let finalBlock = right + left;
-
-        // Final Permutation (Inverse IP)
-        let ciphertext = this.permute(finalBlock, this.FP);
-
-        return ciphertext;
+        // Combine cipher blocks
+        const finalCiphertext = cipherBlocks.join('');
+        return {
+            binary: finalCiphertext,
+            plaintext: this.binaryToString(finalCiphertext),
+            hex: this.binaryToHex(finalCiphertext),
+            base64: this.binaryToBase64(finalCiphertext)
+        };
     }
 
+    decrypt(ciphertext, key) {
+        // Process input in 8-character blocks
+        let plainBlocks = [];
+        const binaryCiphertext = typeof ciphertext === 'string' 
+            ? ciphertext 
+            : ciphertext.binary;
+
+        for (let i = 0; i < binaryCiphertext.length; i += 64) {
+            let block = binaryCiphertext.substr(i, 64);
+
+            // Initial Permutation
+            let permutedInput = this.permute(block, this.IP);
+
+            // Split into left and right halves
+            let left = permutedInput.substr(0, 32);
+            let right = permutedInput.substr(32);
+
+            // Generate round keys (in reverse order for decryption)
+            let subKeys = this.generateSubKeys(key).reverse();
+
+            // 16 Rounds of Decryption
+            for (let j = 0; j < 16; j++) {
+                let oldLeft = left;
+                left = right;
+
+                // Feistel Function
+                let feistelOutput = this.feistelFunction(right, subKeys[j]);
+                right = this.xor(oldLeft, feistelOutput);
+            }
+
+            // Swap left and right for final round
+            let finalBlock = right + left;
+
+            // Final Permutation (Inverse IP)
+            let plainBlock = this.permute(finalBlock, this.FP);
+            plainBlocks.push(plainBlock);
+        }
+
+        // Combine and unpad plain blocks
+        const binaryPlaintext = plainBlocks.join('');
+        const plaintextString = this.binaryToString(binaryPlaintext);
+        return {
+            binary: binaryPlaintext,
+            plaintext: this.unpadInput(plaintextString),
+            hex: this.binaryToHex(binaryPlaintext),
+            base64: this.binaryToBase64(binaryPlaintext)
+        };
+    }
     // Visualization function
     visualizeEncryption(input, key) {
+        // Ensure input is padded to multiple of 8 characters
+        const paddedInput = this.padInput(input);
+
+        // Create steps container
         let steps = $('#steps');
         steps.empty();
 
-        // Convert input to binary
-        let binaryInput = this.stringToBinary(input);
+        // Process each 8-character block
+        let cipherBlocks = [];
+        for (let i = 0; i < paddedInput.length; i += 8) {
+            let block = paddedInput.substr(i, 8);
+            steps.append(`<div class="block-header">Processing Block: ${block}</div>`);
 
-        // Step 1: Initial Permutation
-        let permutedInput = this.permute(binaryInput, this.IP);
-        steps.append(`
-            <div class="step">
-                <h3>Step 1: Initial Permutation</h3>
-                <p>Original Input (Binary): ${binaryInput}</p>
-                <p>Permuted Input: ${permutedInput}</p>
-            </div>
-        `);
+            // Convert block to binary
+            let binaryInput = this.stringToBinary(block);
 
-        // Split into left and right halves
-        let left = permutedInput.substr(0, 32);
-        let right = permutedInput.substr(32);
-
-        // Generate round keys
-        let subKeys = this.generateSubKeys(key);
-
-        // 16 Rounds of Encryption
-        for (let i = 0; i < 16; i++) {
-            let oldLeft = left;
-            left = right;
-
-            // Feistel Function
-            let expandedRight = this.permute(right, this.E);
-            let xorResult = this.xor(expandedRight, subKeys[i]);
-            let sBoxOutput = this.sBoxSubstitution(xorResult);
-            let feistelOutput = this.permute(sBoxOutput, this.P);
-            right = this.xor(oldLeft, feistelOutput);
-
-            // Append round details
+            // Step 1: Initial Permutation
+            let permutedInput = this.permute(binaryInput, this.IP);
             steps.append(`
                 <div class="step">
-                    <h3>Round ${i + 1}</h3>
-                    <div class="round-details">
-                        <p>Left Half: ${left}</p>
-                        <p>Right Half: ${right}</p>
-                        <p>Round Key: ${subKeys[i]}</p>
-                        <p>Expanded Right Half: ${expandedRight}</p>
-                        <p>XOR Result: ${xorResult}</p>
-                        <p>S-Box Output: ${sBoxOutput}</p>
-                        <p>P-Box Output: ${feistelOutput}</p>
+                    <h3>Step 1: Initial Permutation</h3>
+                    <p>Original Input (Text): ${block}</p>
+                    <p>Original Input (Binary): ${binaryInput}</p>
+                    <p>Permuted Input: ${permutedInput}</p>
+                </div>
+            `);
+
+            // Split into left and right halves
+            let left = permutedInput.substr(0, 32);
+            let right = permutedInput.substr(32);
+
+            // Generate round keys
+            let subKeys = this.generateSubKeys(key);
+
+            // 16 Rounds of Encryption
+            for (let j = 0; j < 16; j++) {
+                let oldLeft = left;
+                left = right;
+
+                // Feistel Function
+                let expandedRight = this.permute(right, this.E);
+                let xorResult = this.xor(expandedRight, subKeys[j]);
+                let sBoxOutput = this.sBoxSubstitution(xorResult);
+                let feistelOutput = this.permute(sBoxOutput, this.P);
+                right = this.xor(oldLeft, feistelOutput);
+
+                // Append round details
+                steps.append(`
+                    <div class="step">
+                        <h3>Round ${j + 1}</h3>
+                        <div class="round-details">
+                            <p>Left Half: ${left}</p>
+                            <p>Right Half: ${right}</p>
+                            <p>Round Key: ${subKeys[j]}</p>
+                            <p>Expanded Right Half: ${expandedRight}</p>
+                            <p>XOR Result: ${xorResult}</p>
+                            <p>S-Box Output: ${sBoxOutput}</p>
+                            <p>P-Box Output: ${feistelOutput}</p>
+                        </div>
                     </div>
+                `);
+            }
+
+            // Swap left and right for final round
+            let finalBlock = right + left;
+
+            // Final Permutation
+            let cipherBlock = this.permute(finalBlock, this.FP);
+            cipherBlocks.push(cipherBlock);
+
+            // Append final block details
+            steps.append(`
+                <div class="step">
+                    <h3>Final Block Output</h3>
+                    <p>Final Block (Binary): ${cipherBlock}</p>
+                    <p>Final Block (Hex): ${this.binaryToHex(cipherBlock)}</p>
                 </div>
             `);
         }
 
-        // Swap left and right for final round
-        let finalBlock = right + left;
-
-        // Final Permutation
-        let ciphertext = this.permute(finalBlock, this.FP);
-
-        // Final Output
+        // Combine and display final ciphertext
+        let finalCiphertext = cipherBlocks.join('');
         steps.append(`
-            <div class="step">
-                <h3>Final Output</h3>
-                <p>Ciphertext (Binary): ${ciphertext}</p>
-                <p>Ciphertext (Hex): ${this.binaryToHex(ciphertext)}</p>
+            <div class="final-output">
+                <h3>Complete Encryption Result</h3>
+                <p>Ciphertext (Binary): ${finalCiphertext}</p>
+                <p>Ciphertext (Hex): ${this.binaryToHex(finalCiphertext)}</p>
+                <p>Ciphertext (Base64): ${this.binaryToBase64(finalCiphertext)}</p>
             </div>
         `);
 
-        return ciphertext;
+        return {
+            binary: finalCiphertext,
+            hex: this.binaryToHex(finalCiphertext),
+            base64: this.binaryToBase64(finalCiphertext)
+        };
     }
-
     // Binary to Hex conversion
     binaryToHex(binary) {
         let hex = '';
         for (let i = 0; i < binary.length; i += 4) {
             let chunk = binary.substr(i, 4);
-            hex += parseInt(chunk, 2).toString(16).toUpperCase();
+            hex += parseInt(chunk, 2).toString(16).toUpperCase().padStart(1, '0');
         }
         return hex;
     }

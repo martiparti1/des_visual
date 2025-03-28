@@ -1,61 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Complete DES Encryption Visualizer</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="des-encryptor.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Complete DES Encryption Visualizer</h1>
-        <input type="text" id="input" placeholder="Enter text to encrypt">
-        <input type="text" id="key" placeholder="Enter 8-character key">
-        <button id="encrypt" class = 'algo-btn'>Visualize Encryption</button>
-        <button id="decrypt" class = 'algo-btn'>Visualize Decryption</button>
-        <div id="steps"></div>
+      <h1>Complete DES Encryption Visualizer</h1>
+      <input type="text" id="input" placeholder="Enter text to encrypt" />
+      <input type="text" id="key" placeholder="Enter 8-character key" />
+      <button id="encrypt" class="algo-btn">Visualize Encryption</button>
+      <button id="decrypt" class="algo-btn">Visualize Decryption</button>
+      <div id="steps"></div>
     </div>
 
     <script>
-    $(document).ready(function() {
-        // $('#encrypt').click(function() {
-        //     let input = $('#input').val();
-        //     let key = $('#key').val();
+      $(document).ready(function () {
+        $(".algo-btn").on("click", function () {
+          let input = $("#input").val();
+          let key = $("#key").val();
 
-        //     if (input.length > 0 && key.length === 8) {
-        //         let desEncryptor = new DESEncryptor();
-        //         desEncryptor.visualizeEncryption(input, key);
-        //     } else {
-        //         alert('Please enter a valid input (8 characters) and 8-character key');
-        //     }
-        // });
-
-
-        $('.algo-btn').on('click', function(){
-
-            let input = $('#input').val();
-            let key = $('#key').val();
-
-            if($(this).attr('id') == 'encrypt'){
-                if (input.length > 0 && key.length === 8) {
-                    let desEncryptor = new DESEncryptor();
-                    desEncryptor.visualizeEncryption(input, key);
-                } else {
-                    alert('Please enter a valid input( >0 characters and 8 character key)');
-                }
+          if ($(this).attr("id") == "encrypt") {
+            if (input.length > 0 && key.length === 8) {
+              let desEncryptor = new DESEncryptor();
+              desEncryptor.visualizeEncryption(input, key);
+            } else {
+              alert(
+                "Please enter a valid input( >0 characters and 8 character key)"
+              );
             }
-
-            else{
-                if (input.length > 0 && key.length === 8) {
-                    let desEncryptor = new DESEncryptor();
-                    desEncryptor.visualizeDecryption(input, key);
-                } else {
-                    alert('Please enter a valid input( >0 characters and 8 character key)');
-                }
+          } else {
+            if (input.length > 0 && key.length === 8) {
+              let desEncryptor = new DESEncryptor();
+              desEncryptor.visualizeDecryption(input, key);
+            } else {
+              alert(
+                "Please enter a valid input( >0 characters and 8 character key)"
+              );
             }
-        })
-    });
+          }
+        });
+      });
     </script>
-</body>
+  </body>
 </html>

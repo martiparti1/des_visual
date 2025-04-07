@@ -5,7 +5,7 @@
     <title>Complete DES Encryption Visualizer</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="des-encryptor.js"></script>
+    <script src="des-3.js"></script>
   </head>
   <body>
     <div class="container">
@@ -15,7 +15,7 @@
       <button id="encrypt" class="algo-btn">Visualize Encryption</button>
       <button id="decrypt" class="algo-btn">Visualize Decryption</button>
       <div id="final_result" class="hidden"></div>
-      <p>STEPS</p>
+      <p class="steps_heading hidden">STEPS</p>
       <div id="steps"></div>
     </div>
 
@@ -23,6 +23,7 @@
       $(document).ready(function () {
 
         let final = $("#final_result")
+        let steps = $('.steps_heading')
 
         $(".algo-btn").on("click", function () {
 
@@ -35,6 +36,7 @@
               let desEncryptor = new DESEncryptor();
               desEncryptor.visualizeEncryption(input, key);
               final.removeClass('hidden')
+              steps.removeClass('hidden')
             } 
 
             else {
@@ -50,6 +52,7 @@
               let desEncryptor = new DESEncryptor();
               desEncryptor.visualizeDecryption(input, key);
               final.removeClass('hidden')
+              steps.removeClass('hidden')
             }
 
             else {

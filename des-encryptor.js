@@ -277,6 +277,9 @@ class DESEncryptor {
     let steps = $("#steps");
     steps.empty();
 
+    let final = $('#final_result');
+    final.empty();
+
     let cipherBlocks = [];
     for (let i = 0; i < paddedInput.length; i += 8) {
       let block = paddedInput.substr(i, 8);
@@ -336,20 +339,15 @@ class DESEncryptor {
                 <div class="step">
                     <h3>Final Block Output</h3>
                     <p>Final Block (Binary): ${cipherBlock}</p>
-                    <p>Final Block (Hex): ${this.binaryToHex(cipherBlock)}</p>
                 </div>
             `);
     }
 
     let finalCiphertext = cipherBlocks.join("");
-    steps.append(`
+    $('#final_result').append(`
             <div class="final-output">
                 <h3>Complete Encryption Result</h3>
-                <p>Ciphertext (Binary): ${finalCiphertext}</p>
-                <p>Ciphertext (Hex): ${this.binaryToHex(finalCiphertext)}</p>
-                <p>Ciphertext (Base64): ${this.binaryToBase64(
-                  finalCiphertext
-                )}</p>
+                <p>Ciphertext (Base64): ${this.binaryToBase64(finalCiphertext)}</p>
             </div>
         `);
 
@@ -384,6 +382,9 @@ class DESEncryptor {
 
     let steps = $("#steps");
     steps.empty();
+
+    let final = $('#final_result')
+    final.empty();
 
     let plainBlocks = [];
     for (let i = 0; i < binaryCiphertext.length; i += 64) {
@@ -449,13 +450,10 @@ class DESEncryptor {
     const plaintextString = this.binaryToString(binaryPlaintext);
     const unpadded = this.unpadInput(plaintextString);
 
-    steps.append(`
+    $('#final_result').append(`
             <div class="final-output">
                 <h3>Decryption Result</h3>
                 <p>Plaintext: ${unpadded}</p>
-                <p>Plaintext (Binary): ${binaryPlaintext}</p>
-                <p>Plaintext (Hex): ${this.binaryToHex(binaryPlaintext)}</p>
-                <p>Plaintext (Base64): ${this.binaryToBase64(binaryPlaintext)}</p>
             </div>
         `);
 

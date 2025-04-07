@@ -14,33 +14,50 @@
       <input type="text" id="key" placeholder="Enter 8-character key" />
       <button id="encrypt" class="algo-btn">Visualize Encryption</button>
       <button id="decrypt" class="algo-btn">Visualize Decryption</button>
+      <div id="final_result" class="hidden"></div>
+      <p>STEPS</p>
       <div id="steps"></div>
     </div>
 
     <script>
       $(document).ready(function () {
+
+        let final = $("#final_result")
+
         $(".algo-btn").on("click", function () {
+
           let input = $("#input").val();
           let key = $("#key").val();
 
           if ($(this).attr("id") == "encrypt") {
+
             if (input.length > 0 && key.length === 8) {
               let desEncryptor = new DESEncryptor();
               desEncryptor.visualizeEncryption(input, key);
-            } else {
+              final.removeClass('hidden')
+            } 
+
+            else {
               alert(
                 "Please enter a valid input( >0 characters and 8 character key)"
               );
             }
-          } else {
+
+          } 
+          else {
+    
             if (input.length > 0 && key.length === 8) {
               let desEncryptor = new DESEncryptor();
               desEncryptor.visualizeDecryption(input, key);
-            } else {
+              final.removeClass('hidden')
+            }
+
+            else {
               alert(
                 "Please enter a valid input( >0 characters and 8 character key)"
               );
             }
+
           }
         });
       });

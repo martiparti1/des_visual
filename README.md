@@ -1,1 +1,1 @@
-most of this was done by ai. just wanted to see the quality of the "building blocks" it can spit out
+mostly vibecoded. just wanted to see the quality of the "building blocks" ai can spit out

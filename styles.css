@@ -96,3 +96,20 @@ button {
         overflow-wrap: break-word;
     }
 }
+
+.block-char {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 0 2px;
+  background: #eee;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.padding-char {
+  display: none;
+}
+
+/* .step p {
+  word-break: break-all;
+} */
